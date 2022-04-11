@@ -10,7 +10,8 @@ dc_offset = 600;    %모터 DC 오프셋
 frequency = 0:0.2:3.8;
 
 % 출력 버퍼 생성
-output=zeros(1,length(frequency));
+output_mag=zeros(1,length(frequency));
+output_phase=zeros(1,length(frequency));
 count = 1;
 
 for i1 = 0:0.2:3.8
@@ -31,21 +32,46 @@ for i1 = 0:0.2:3.8
     signal = signal - 600; %DC 빼주기
 
     mag = abs(fftshift(fft(signal)));
-    phase = angle(fft(signal));
-    ly = length(signal);
-    mag =  2*mag/ly ;
+
+    phase = angle(fftshift(fft(signal)));
+
+    tol = 1e-6;
     
+    phase(abs(phase) < tol) = 0;
+
+    ly = length(signal);
+
+    %스케일링
+    mag =  2*mag/ly ;
+ 
+    
+    %반토막 날리기
+    mag =  mag(end/2:end) ;
+    phase = phase(end/2:end) ;
+
     f = (-ly/2:ly/2-1)/ly*fs;
+
     [max_mag, max_freq_index] = max(mag);
-    output(count)=max_mag;
+    max_phase = phase;
+
+    output_mag(count)=max_mag;
+    output_phase(count)=max_phase;
+
     count=count+1;
 end
-
+output_phase(1) = -pi/2; %DC에는 위상차 없다..
  
+a = figure;
+subplot(2,1,1);
+semilogx(frequency, mag2db(output_mag/600), LineWidth=2); %입력의 크기가 600이므로, 전달함수를 구하기 위해 출력/입력 해줌
+title('Frequency Response of the motor', FontSize=14,FontWeight="bold");
+grid on;
+xlabel('Frequency [Hz]')
+ylabel(['Phase' '[' char(176) ']'])
 
-semilogx(frequency(2:end), output(2:end), LineWidth=2);
-    title('Frequency Response of the motor', FontSize=14,FontWeight="bold");
 
+subplot(2,1,2);
+semilogx(frequency, rad2deg(output_phase)+90, LineWidth=2);
 grid on;
 xlabel('Frequency [Hz]')
 ylabel('Magnitude [dB]')
