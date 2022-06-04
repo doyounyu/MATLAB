@@ -1,3 +1,6 @@
+%모터의 2차 전달함수 계수들을 통해 속도 컨트롤러의 PID Gain 산출에 도움을 주는 코드. 
+%알파 값(컨트롤러 복소 극점의 wc에 앞에 곱해져서 rc 값을 만드는 계수)을 달리 하면서 원하는 스펙을 표를 통해 산출할 수 있다.  
+
 clc; clearvars; close all;
 
 %모터 상수들
@@ -26,15 +29,16 @@ figure('units','normalized','outerposition',[0 0 1 1]) %꽉찬화면
 for j = 1:5
     for i= 1:0.1:10
     figure(1)
-    a = j;
+    a = j;  %알파 값을 달리 하면서 어떤 형태로 주어지는지 확인
     wc = 0.1*wm*i;
     rc = a*wc;
     
     Kp = (wc^2 -wm^2 + 2*zc*wc*rc)/(km*wm^2);
     Ki = (rc*wc^2)/(km*wm^2);
     Kd = (2*zc*wc-2*zm*wm+rc)/(km*wm^2);
+    %Open Loop 전달함수
     Go = km*wm^2*(s^2*Kd+s*Kp+Ki)/(s*(s^2+2^zm*wm*s+wm^2));
-     
+    %Closed Loop 
     Gcl = (km*wm^2*(Kd*s^2+Kp*s+Ki))/((s+rc)*(s^2+2*zc*wc*s+wc^2));
     
     risebuff(cnt) = stepinfo(Gcl).RiseTime;
@@ -96,6 +100,3 @@ for j = 1:5
     xlim([0.1 1])
 
 end
-%% 
-bode( 1/(1+Go))
-k =mag2db(bode(1/(1+Go), 50))
